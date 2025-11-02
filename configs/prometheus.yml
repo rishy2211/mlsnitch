@@ -1,0 +1,16 @@
+global:
+  scrape_interval: 5s
+  evaluation_interval: 5s
+  scrape_timeout: 4s
+
+  external_labels:
+    project: mlsnitch
+    env: devnet
+
+scrape_configs:
+  # Rust chain node
+  - job_name: "chain-node"
+    metrics_path: /metrics
+    static_configs:
+      - targets:
+          - "chain-node:9100"

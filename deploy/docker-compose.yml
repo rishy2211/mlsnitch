@@ -1,0 +1,30 @@
+name: mlsnitch
+
+services:
+  chain:
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.chain
+    container_name: chain-node
+    environment:
+      - RUST_LOG=info
+      - ML_SERVICE_URL=http://ml-service:8000  # used by ml_client in Rust
+      - PROMETHEUS_BIND_ADDR=0.0.0.0:9100      # /metrics endpoint
+      - ROCKSDB_PATH=/data/rocksdb
+    depends_on:
+      ml-service:
+        condition: service_healthy
+    ports:
+      - "7000:7000"        # example: JSON-RPC / node API
+      - "9100:9100"        # Prometheus metrics
+    # volumes:
+    #   - chain-data:/data  # uncomment if you want persistent RocksDB
+    networks:
+      - consensus-net
+
+networks:
+  consensus-net:
+    driver: bridge
+
+volumes:
+  chain-data:
