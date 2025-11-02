@@ -68,21 +68,10 @@ impl Default for MetricsConfig {
 /// - persistent storage (`storage`),
 /// - ML verification client (`ml_client`),
 /// - Prometheus metrics exporter (`metrics`).
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Default)]
 pub struct ChainConfig {
     pub consensus: ConsensusConfig,
     pub storage: RocksDbConfig,
     pub ml_client: MlClientConfig,
     pub metrics: MetricsConfig,
-}
-
-impl Default for ChainConfig {
-    fn default() -> Self {
-        Self {
-            consensus: ConsensusConfig::default(),
-            storage: RocksDbConfig::default(),
-            ml_client: MlClientConfig::default(),
-            metrics: MetricsConfig::default(),
-        }
-    }
 }

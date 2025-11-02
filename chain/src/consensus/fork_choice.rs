@@ -71,7 +71,7 @@ mod tests {
         // Sanity check: we can make a trait object for dynamic dispatch.
         fn _take_trait_object(_fc: &dyn ForkChoice) {}
 
-        let fc = LongestChainForkChoice::default();
+        let fc = LongestChainForkChoice;
         _take_trait_object(&fc);
     }
 }

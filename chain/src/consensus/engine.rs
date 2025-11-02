@@ -248,7 +248,7 @@ mod tests {
         };
         let store = InMemoryBlockStore::new();
         let validator = AcceptAllValidator;
-        let fork_choice = LongestChainForkChoice::default();
+        let fork_choice = LongestChainForkChoice;
 
         let mut engine = ConsensusEngine::new(cfg, store, validator, fork_choice);
 
@@ -276,7 +276,7 @@ mod tests {
         };
         let store = InMemoryBlockStore::new();
         let validator = AcceptAllValidator;
-        let fork_choice = LongestChainForkChoice::default();
+        let fork_choice = LongestChainForkChoice;
 
         let mut engine = ConsensusEngine::new(cfg, store, validator, fork_choice);
 

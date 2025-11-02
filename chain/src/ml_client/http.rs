@@ -45,6 +45,7 @@ use crate::validation::{MlError, MlVerdict, MlVerifier};
 /// validators. It uses the blocking `reqwest` client internally; higher
 /// layers can wrap calls in dedicated threads or spawn blocking tasks
 /// in a Tokio runtime if needed.
+#[allow(dead_code)]
 pub struct HttpMlVerifier {
     base_url: String,
     client: Client,
