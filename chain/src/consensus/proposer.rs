@@ -92,3 +92,43 @@ impl Proposer {
         Block { header, txs }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn proposer_from_config_copies_limits() {
+        let cfg = ConsensusConfig {
+            block_time_secs: 7,
+            max_block_txs: 1234,
+            max_block_size_bytes: 512_000,
+            allow_empty_blocks: false,
+        };
+
+        let p = Proposer::from_config(&cfg);
+
+        assert_eq!(p.max_block_txs, cfg.max_block_txs);
+        assert_eq!(p.max_block_size_bytes, cfg.max_block_size_bytes);
+        assert_eq!(p.allow_empty_blocks, cfg.allow_empty_blocks);
+    }
+
+    #[test]
+    fn proposer_trait_bounds() {
+        fn assert_bounds<T: Clone + core::fmt::Debug>() {}
+        assert_bounds::<Proposer>();
+    }
+
+    #[test]
+    fn build_block_signature_is_stable() {
+        // This never runs; it's just a compile-time check that the
+        // generics and return type of `build_block` stay as expected.
+        fn _assert<S, P>(store: &S, tx_pool: &mut P, proposer: &Proposer, id: AccountId, ts: u64)
+        where
+            S: BlockStore,
+            P: TxPool,
+        {
+            let _block: Block = proposer.build_block(store, id, tx_pool, ts);
+        }
+    }
+}

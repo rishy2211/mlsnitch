@@ -47,3 +47,48 @@ impl fmt::Display for ConsensusError {
 
 impl std::error::Error for ValidationError {}
 impl std::error::Error for ConsensusError {}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::error::Error as StdError;
+
+    #[test]
+    fn validation_error_display_static_invalid() {
+        let err = ValidationError::Invalid("bad nonce");
+        assert_eq!(err.to_string(), "invalid block: bad nonce");
+    }
+
+    #[test]
+    fn validation_error_display_custom() {
+        let err = ValidationError::Custom("height mismatch".to_string());
+        assert_eq!(err.to_string(), "invalid block: height mismatch");
+    }
+
+    #[test]
+    fn consensus_error_wraps_validation_and_uses_same_message() {
+        let v = ValidationError::Invalid("parent not found");
+        let e: ConsensusError = v.into();
+        assert_eq!(e.to_string(), "invalid block: parent not found");
+    }
+
+    #[test]
+    fn consensus_error_display_storage() {
+        let e = ConsensusError::Storage("missing parent block".to_string());
+        assert_eq!(e.to_string(), "storage error: missing parent block");
+    }
+
+    #[test]
+    fn consensus_error_display_other() {
+        let e = ConsensusError::Other("timer failed".to_string());
+        assert_eq!(e.to_string(), "consensus error: timer failed");
+    }
+
+    #[test]
+    fn types_implement_std_error() {
+        fn assert_is_error<E: StdError>() {}
+
+        assert_is_error::<ValidationError>();
+        assert_is_error::<ConsensusError>();
+    }
+}

@@ -24,3 +24,40 @@ impl Default for ConsensusConfig {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn default_values_are_expected() {
+        let cfg = ConsensusConfig::default();
+
+        assert_eq!(cfg.block_time_secs, 5);
+        assert_eq!(cfg.max_block_txs, 10_000);
+        assert_eq!(cfg.max_block_size_bytes, 1_000_000);
+        assert!(cfg.allow_empty_blocks);
+    }
+
+    #[test]
+    fn can_override_all_fields() {
+        let cfg = ConsensusConfig {
+            block_time_secs: 42,
+            max_block_txs: 1_234,
+            max_block_size_bytes: 512_000,
+            allow_empty_blocks: false,
+        };
+
+        assert_eq!(cfg.block_time_secs, 42);
+        assert_eq!(cfg.max_block_txs, 1_234);
+        assert_eq!(cfg.max_block_size_bytes, 512_000);
+        assert!(!cfg.allow_empty_blocks);
+    }
+
+    #[test]
+    fn consensus_config_is_clone_and_debug() {
+        fn assert_clone_debug<T: Clone + core::fmt::Debug>() {}
+
+        assert_clone_debug::<ConsensusConfig>();
+    }
+}

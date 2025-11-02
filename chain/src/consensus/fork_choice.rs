@@ -10,9 +10,9 @@ use super::store::BlockStore;
 /// implementation decides whether the candidate should become the new tip.
 pub trait ForkChoice {
     /// Returns `true` if the candidate block should replace the current tip.
-    fn should_update_tip<S: BlockStore>(
+    fn should_update_tip(
         &self,
-        store: &S,
+        store: &dyn BlockStore,
         current_tip: Option<BlockHash>,
         candidate: &Block,
     ) -> bool;
@@ -28,9 +28,9 @@ pub trait ForkChoice {
 pub struct LongestChainForkChoice;
 
 impl ForkChoice for LongestChainForkChoice {
-    fn should_update_tip<S: BlockStore>(
+    fn should_update_tip(
         &self,
-        store: &S,
+        store: &dyn BlockStore,
         current_tip: Option<BlockHash>,
         candidate: &Block,
     ) -> bool {
@@ -47,5 +47,31 @@ impl ForkChoice for LongestChainForkChoice {
                 }
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn longest_chain_fork_choice_trait_bounds() {
+        fn assert_bounds<T: ForkChoice + Default + Clone + Copy + core::fmt::Debug>() {}
+        assert_bounds::<LongestChainForkChoice>();
+    }
+
+    #[test]
+    fn longest_chain_fork_choice_is_zero_sized() {
+        // This should remain a ZST so we can freely copy it around.
+        assert_eq!(core::mem::size_of::<LongestChainForkChoice>(), 0);
+    }
+
+    #[test]
+    fn fork_choice_trait_is_object_safe() {
+        // Sanity check: we can make a trait object for dynamic dispatch.
+        fn _take_trait_object(_fc: &dyn ForkChoice) {}
+
+        let fc = LongestChainForkChoice::default();
+        _take_trait_object(&fc);
     }
 }
