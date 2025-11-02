@@ -1,0 +1,62 @@
+[workspace]
+members = [
+    "chain",
+    "api-gateway",
+]
+resolver = "2"
+
+# Shared package metadata for workspace members
+[workspace.package]
+name = "mlsnitch-rs"
+version = "0.1.0"
+authors = [
+    "Keys <70819367+keys-i@users.noreply.github.com>",
+    "Amish Priyadarshi",
+    "Rishab Ghai",
+    "Harshit Rana",
+    "Aryan Rajvanshi",
+]
+edition = "2024"
+description = "Experimental proof-of-stake blockchain node that integrates multi-factor ML watermark verification into the block validity predicate to enforce consensus-level authenticity of models."
+readme = "README.md"
+license-file = "LICENSE"
+keywords = [
+    "blockchain",
+    "consensus",
+    "machine-learning",
+    "watermarking",
+    "verification",
+]
+categories = [
+    "cryptography::cryptocurrencies",
+    "network-programming",
+    "simulation",
+]
+
+# If you want shared deps, you can add:
+# [workspace.dependencies]
+# tokio = { version = "1", features = ["full"] }
+# rocksdb = "0.21"
+# etc.
+
+# Faster compile times, still with good debug info
+[profile.dev]
+opt-level = 1
+debug = true
+debug-assertions = true
+overflow-checks = true
+incremental = true
+lto = "off"
+codegen-units = 16
+
+# For experiments / benchmarks on consensus + ML verification
+[profile.release]
+opt-level = 3
+debug = false
+debug-assertions = false
+overflow-checks = false
+incremental = false
+lto = "thin"
+codegen-units = 1
+panic = "abort"
+strip = "symbols"
