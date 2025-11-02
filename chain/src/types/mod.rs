@@ -1,6 +1,6 @@
 //! Core domain types used by the chain
 //!
-//! This module defines strongly-typed hashes, account indentifiers, model
+//! This module defines strongly-typed hashes, account identifiers, model
 //! artefact identifiers, and watermarking-related metadata that are shared
 //! across the chain implementation. The goal is to avoid "naked" byte
 //! buffers in public APIs and instead use domain-specific newtypes.
@@ -9,8 +9,14 @@ use serde::{Deserialize, Serialize};
 
 /// Types related to ML artefacts stored and referenced on-chain.
 pub mod artefact;
+/// Types for blocks, headers, and block hashes.
+pub mod block;
+/// Types for transactions and transaction payloads.
+pub mod tx;
 
 pub use artefact::ArtefactMetadata;
+pub use block::{Block, BlockHash, Header};
+pub use tx::{ModelUseMetadata, Transaction, TxRegisterModel, TxTransfer, TxUseModel};
 
 /// Length in bytes of all 256-bit hash types used in this module.
 pub const HASH_LEN: usize = 32;
@@ -182,4 +188,79 @@ pub struct EvidenceRef {
     pub evidence_hash: EvidenceHash,
     /// Watermark profile describing thresholds and bands used by the scheme.
     pub wm_profile: WmProfile,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hash256_is_deterministic_and_changes_with_input() {
+        let h1 = Hash256::compute(b"hello");
+        let h2 = Hash256::compute(b"hello");
+        let h3 = Hash256::compute(b"world");
+
+        assert_eq!(h1.as_bytes(), h2.as_bytes(), "same input, same hash");
+        assert_ne!(
+            h1.as_bytes(),
+            h3.as_bytes(),
+            "different input, different hash"
+        );
+    }
+
+    #[test]
+    fn account_id_follows_public_key_bytes() {
+        let pk1 = vec![1u8; 64];
+        let pk2 = vec![2u8; 64];
+
+        let a1 = AccountId::from_public_key(&pk1);
+        let a2 = AccountId::from_public_key(&pk1);
+        let a3 = AccountId::from_public_key(&pk2);
+
+        assert_eq!(a1, a2, "same public key bytes, same account id");
+        assert_ne!(a1, a3, "different public key bytes, different account id");
+    }
+
+    #[test]
+    fn aid_and_evidence_hash_use_hash256_compute() {
+        let model_bytes = b"model-blob";
+        let evidence_bytes = b"wm-key-and-params";
+
+        let aid = Aid::from_model_bytes(model_bytes);
+        let ev = EvidenceHash::from_bytes(evidence_bytes);
+
+        let expected_aid = Hash256::compute(model_bytes);
+        let expected_ev = Hash256::compute(evidence_bytes);
+
+        assert_eq!(aid.as_hash(), &expected_aid);
+        assert_eq!(ev.as_hash(), &expected_ev);
+    }
+
+    #[test]
+    fn evidence_ref_serde_roundtrip() {
+        let wm_profile = WmProfile {
+            tau_input: 0.9,
+            tau_feat: 0.1,
+            logit_band_low: 0.02,
+            logit_band_high: 0.05,
+        };
+
+        let evidence = EvidenceRef {
+            scheme_id: "multi_factor_v1".to_string(),
+            evidence_hash: EvidenceHash(Hash256([7u8; HASH_LEN])),
+            wm_profile,
+        };
+
+        let json = serde_json::to_string(&evidence).expect("serialize evidence ref to json");
+        let decoded: EvidenceRef =
+            serde_json::from_str(&json).expect("deserialize evidence ref from json");
+
+        assert_eq!(decoded.scheme_id, evidence.scheme_id);
+        assert_eq!(
+            decoded.evidence_hash.as_hash().as_bytes(),
+            evidence.evidence_hash.as_hash().as_bytes()
+        );
+        assert_eq!(decoded.wm_profile.tau_input, evidence.wm_profile.tau_input);
+        assert_eq!(decoded.wm_profile.tau_feat, evidence.wm_profile.tau_feat);
+    }
 }

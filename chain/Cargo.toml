@@ -10,7 +10,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-bincode = "2.0.1"
+bincode = { version = "2.0.1", features = ["serde", "alloc"] }
 blake3 = "1.8.2"
 pqcrypto-mldsa = "0.1.2"
 serde = { version = "1.0.228", features = ["derive"] }
