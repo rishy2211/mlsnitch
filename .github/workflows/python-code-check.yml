@@ -1,0 +1,68 @@
+name: Python Code Check
+
+on:
+  push:
+    branches: [ main, master ]
+  pull_request:
+    branches: [ main, master ]
+
+# Cancel older runs on same branch/PR
+concurrency:
+  group: python-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint (black + ruff)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+      # change 3.11 -> your preferred version if needed
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies (tools + project)
+        run: |
+          python -m pip install --upgrade pip
+          pip install black ruff
+          if [ -f ml-service/requirements.txt ]; then
+            pip install -r ml-service/requirements.txt
+          fi
+
+      - name: Run black (check only)
+        run: black --check ml-service
+
+      - name: Run ruff
+        run: ruff check ml-service
+
+  test:
+    name: Tests (pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: "pip"
+
+      - name: Install dependencies (pytest + project)
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          if [ -f ml-service/requirements.txt ]; then
+            pip install -r ml-service/requirements.txt
+          fi
+
+      - name: Run tests
+        run: |
+          pytest ml-service/tests
