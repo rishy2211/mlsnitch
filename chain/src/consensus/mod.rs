@@ -5,5 +5,9 @@
 //! - configuration parameters ([`config::ConsensusConfig`]),
 
 pub mod config;
+pub mod error;
+pub mod store;
 
 pub use config::ConsensusConfig;
+pub use error::{ConsensusError, ValidationError};
+pub use store::BlockStore;
