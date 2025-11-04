@@ -11,3 +11,4 @@ pub mod mem;
 pub mod rocksdb;
 
 pub use mem::InMemoryBlockStore;
+pub use rocksdb::{RocksDbBlockStore, RocksDbConfig, StorageError};

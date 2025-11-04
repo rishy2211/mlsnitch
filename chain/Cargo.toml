@@ -13,5 +13,9 @@ categories.workspace = true
 bincode = { version = "2.0.1", features = ["serde", "alloc"] }
 blake3 = "1.8.2"
 pqcrypto-mldsa = "0.1.2"
+rocksdb = { version = "0.24.0", features = ["multi-threaded-cf"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
+
+[dev-dependencies]
+tempfile = "3.23.0"
