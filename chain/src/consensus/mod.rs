@@ -5,6 +5,7 @@
 //! - configuration parameters ([`config::ConsensusConfig`]),
 
 pub mod config;
+pub mod engine;
 pub mod error;
 pub mod fork_choice;
 pub mod proposer;
@@ -12,6 +13,7 @@ pub mod store;
 pub mod validator;
 
 pub use config::ConsensusConfig;
+pub use engine::ConsensusEngine;
 pub use error::{ConsensusError, ValidationError};
 pub use fork_choice::{ForkChoice, LongestChainForkChoice};
 pub use proposer::{Proposer, TxPool};
