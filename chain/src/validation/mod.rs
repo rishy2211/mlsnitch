@@ -13,3 +13,4 @@ pub mod base;
 pub mod ml;
 
 pub use base::BaseValidity;
+pub use ml::{MlConfig, MlError, MlValidity, MlVerdict, MlVerifier};
