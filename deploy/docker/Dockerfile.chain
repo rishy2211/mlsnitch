@@ -1,6 +1,4 @@
-# ==========================
-# Builder image
-# ==========================
+# === Builder image ===
 FROM rust:1.82-slim-bookworm AS builder
 
 # Install system deps (openssl for HTTP, pkg-config, etc.)
@@ -28,9 +26,8 @@ COPY chain/src chain/src
 # Build the actual binary
 RUN cargo build -p chain --release
 
-# ==========================
-# Runtime image
-# ==========================
+
+# === Runtime image ===
 FROM debian:bookworm-slim AS runtime
 
 # Minimal system deps: CA certs + whatever Rust binary needs
