@@ -11,6 +11,7 @@ categories.workspace = true
 
 [dependencies]
 axum = { version = "0.8.7", features = ["macros", "json"] }
+chain = { version = "1.2.110", path = "../chain" }
 hex = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
