@@ -1,0 +1,36 @@
+# Multi-stage build for the `api-gateway` binary, which links against
+# the `chain` library crate.
+
+FROM rust:1.81 as builder
+
+WORKDIR /usr/src/app
+
+# Copy workspace manifests first for better caching.
+COPY Cargo.toml Cargo.lock ./
+COPY chain/Cargo.toml chain/Cargo.toml
+COPY api-gateway/Cargo.toml api-gateway/Cargo.toml
+
+# Copy the rest of the workspace.
+COPY . .
+
+# Build the api-gateway binary in release mode.
+RUN cargo build -p api-gateway --release
+
+# ---- Runtime image ----
+FROM debian:bookworm-slim
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Copy the compiled binary.
+COPY --from=builder /usr/src/app/target/release/api-gateway /usr/local/bin/api-gateway
+
+ENV RUST_LOG=api_gateway=info,chain=info
+
+# 8081 = API, 9898 = metrics (same pattern as chain crate).
+EXPOSE 8081 9898
+
+CMD ["api-gateway"]

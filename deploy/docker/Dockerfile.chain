@@ -1,57 +1,37 @@
-# === Builder image ===
-FROM rust:1.82-slim-bookworm AS builder
+# Multi-stage build for the `chain` binary.
 
-# Install system deps (openssl for HTTP, pkg-config, etc.)
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    pkg-config \
-    libssl-dev \
-    && rm -rf /var/lib/apt/lists/*
+FROM rust:1.81 as builder
 
-WORKDIR /app
+WORKDIR /usr/src/app
 
-# Copy manifests first (better build caching)
+# Copy workspace manifests first for better caching.
 COPY Cargo.toml Cargo.lock ./
 COPY chain/Cargo.toml chain/Cargo.toml
+COPY api-gateway/Cargo.toml api-gateway/Cargo.toml
 
-# Create dummy src to warm up dependency cache
-RUN mkdir -p chain/src && echo "fn main() {}" > chain/src/main.rs
+# Copy the rest of the workspace.
+COPY . .
 
-# Fetch and build deps only (no real code yet)
-RUN cargo build -p chain --release || true
-
-# Now copy the real source
-COPY chain/src chain/src
-
-# Build the actual binary
+# Build the chain binary in release mode.
 RUN cargo build -p chain --release
 
+# ---- Runtime image ----
+FROM debian:bookworm-slim
 
-# === Runtime image ===
-FROM debian:bookworm-slim AS runtime
-
-# Minimal system deps: CA certs + whatever Rust binary needs
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
-# Copy the built binary from the builder stage
-COPY --from=builder /app/target/release/chain /app/chain
+# Copy the compiled binary.
+COPY --from=builder /usr/src/app/target/release/chain /usr/local/bin/chain
 
-# If you persist RocksDB or configs, mount those as volumes in compose
-# and/or COPY defaults here, e.g.:
-# COPY configs/devnet.toml /app/config/devnet.toml
+# Default data dir for RocksDB (matches RocksDbConfig::default path).
+RUN mkdir -p /app/data
 
-# Environment defaults (can be overridden by docker-compose)
-ENV RUST_LOG=info
-ENV ML_SERVICE_URL=http://ml-service:8000
-ENV PROMETHEUS_BIND_ADDR=0.0.0.0:9100
+ENV RUST_LOG=chain=info
 
-# Expose typical ports (adjust to your actual node)
-EXPOSE 7000 9100
+EXPOSE 9898
 
-# Run the node
-# If you later add CLI flags (e.g. --config), update this CMD.
-CMD ["./chain"]
+CMD ["chain"]
