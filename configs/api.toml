@@ -1,0 +1,10 @@
+# configs/api.toml
+#
+# API gateway configuration (api-gateway/src/config.rs).
+# The current ApiConfig only has a single field, `listen_addr`.
+# You can later extend this file and add a loader if you want.
+
+[api]
+# Address to bind the API HTTP server to.
+# 0.0.0.0 makes it reachable from outside the container.
+listen_addr = "0.0.0.0:8081"

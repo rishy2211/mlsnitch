@@ -1,0 +1,39 @@
+# Devnet configuration for a single-node setup.
+#
+# This mirrors `chain::config::ChainConfig` and its sub-configs.
+# You still need to write the actual loader if you want the node
+# to read this file instead of using defaults.
+
+[consensus]
+# Target block time in seconds.
+block_time_secs = 5
+
+# Soft limit on number of transactions per block.
+max_block_txs = 1000
+
+# Soft limit on serialized block size in bytes (1 MiB).
+max_block_size_bytes = 1_000_000
+
+# Whether to allow empty blocks when the tx pool is empty.
+allow_empty_blocks = true
+
+[storage]
+# RocksDB path inside the node container/process.
+path = "data/devnet-db"
+create_if_missing = true
+
+[ml_client]
+# Base URL of the Python + PyTorch ML verification service.
+# For now this assumes the ML service is reachable at this host:port
+# from wherever the node is running.
+base_url = "http://127.0.0.1:8080"
+
+# Request timeout for ML verification calls, in seconds.
+timeout_secs = 2
+
+[metrics]
+# Whether to run the Prometheus `/metrics` HTTP exporter.
+enabled = true
+
+# Address to bind metrics exporter to.
+listen_addr = "0.0.0.0:9898"

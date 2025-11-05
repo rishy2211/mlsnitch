@@ -1,16 +1,21 @@
+# configs/prometheus.yml
+#
+# Scrape metrics from the chain node(s) and the API gateway.
+# Both expose a Prometheus-compatible /metrics endpoint via the
+# `MetricsRegistry` in the `chain` crate.
+
 global:
   scrape_interval: 5s
   evaluation_interval: 5s
   scrape_timeout: 4s
 
-  external_labels:
-    project: mlsnitch
-    env: devnet
-
 scrape_configs:
-  # Rust chain node
-  - job_name: "chain-node"
-    metrics_path: /metrics
+  - job_name: "chain"
     static_configs:
       - targets:
-          - "chain-node:9100"
+          - "chain:9898"
+
+  - job_name: "api-gateway"
+    static_configs:
+      - targets:
+          - "api-gateway:9898"
