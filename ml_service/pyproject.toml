@@ -7,6 +7,45 @@ name = "ml-service"
 version = "0.1.0"
 description = "Watermark-based ML authenticity verification service for the chain prototype."
 requires-python = ">=3.10"
+readme = "README.md"
+
+# Basic licensing info – change if you prefer a different license.
+license = { text = "MIT" }
+
+authors = [
+    { name = "Keys", email = "70819367+keys-i@users.noreply.github.com" },
+    { name = "Amish Priyadarshi" },
+    { name = "Rishab Ghai" },
+    { name = "Harshit Rana" },
+    { name = "Aryan Rajvanshi" },
+]
+
+maintainers = [
+    { name = "Keys", email = "70819367+keys-i@users.noreply.github.com" }
+]
+
+keywords = [
+    "machine-learning",
+    "watermarking",
+    "model-authenticity",
+    "fastapi",
+    "pytorch",
+    "blockchain",
+]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Science/Research",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Framework :: FastAPI",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Internet :: WWW/HTTP :: HTTP Servers",
+]
+
 dependencies = [
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -18,7 +57,19 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0.0",
+    "httpx>=0.27.0",
+    "ruff>=0.6.0",
 ]
 
+[project.urls]
+homepage = "https://github.com/keys-i"                 # change to repo URL if you like
+repository = "https://github.com/keys-i/ml-service"    # or the monorepo URL
+issues = "https://github.com/keys-i/ml-service/issues"
+
 [project.scripts]
+# Console entry point; matches `src.main:run`.
 ml-service = "src.main:run"
+
+[tool.setuptools]
+# Treat `src/` as a top-level package named `src` (so imports like `src.main` work).
+packages = ["src"]
