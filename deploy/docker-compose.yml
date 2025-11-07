@@ -1,6 +1,31 @@
 name: mlsnitch
 
+# Devnet stack:
+# - ml-service: Python ML verification service (FastAPI + PyTorch stub)
+# - chain:      Rust chain node (metrics on 9898)
+# - api-gateway: Rust API + embedded consensus engine (API on 8081, metrics on 9898)
+# - prometheus: Scrapes metrics from chain + api-gateway
+
+version: "3.9"
+
 services:
+  ml-service:
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile.ml-service
+    container_name: ml-service
+    working_dir: /app/ml_service
+    ports:
+      - "8080:8080"
+    environment:
+      # Matches src/config.py and configs/ml-service.toml
+      - ML_SERVICE_MODEL_ROOT=/app/ml_service/models
+    volumes:
+      - ml-models:/app/ml_service/models
+      - ../configs/ml-service.toml:/app/config/ml-service.toml:ro
+    networks:
+      - devnet
+
   chain:
     build:
       context: ..
@@ -14,6 +39,10 @@ services:
       - chain-data:/app/data
     environment:
       - RUST_LOG=chain=info
+      # Later, if you add config loading to the Rust code, you can point at devnet.toml:
+      # - CHAIN_CONFIG=/app/configs/devnet.toml
+    depends_on:
+      - ml-service
     networks:
       - devnet
 
@@ -30,10 +59,13 @@ services:
       - "9899:9898"
     environment:
       - RUST_LOG=api_gateway=info,chain=info
-    networks:
-      - devnet
+      # Similarly, once config loading is implemented, you could inject:
+      # - CHAIN_CONFIG=/app/configs/devnet.toml
     depends_on:
       - chain
+      - ml-service
+    networks:
+      - devnet
 
   prometheus:
     image: prom/prometheus:latest
@@ -50,6 +82,7 @@ services:
 
 volumes:
   chain-data:
+  ml-models:
 
 networks:
   devnet:
