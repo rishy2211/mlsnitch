@@ -2,9 +2,9 @@ name: Python Code Check
 
 on:
   push:
-    branches: [ main, master ]
+    branches: [main, master]
   pull_request:
-    branches: [ main, master ]
+    branches: [main, master]
 
 # Cancel older runs on same branch/PR
 concurrency:
@@ -21,7 +21,6 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Set up Python
-      # change 3.11 -> your preferred version if needed
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
@@ -30,16 +29,18 @@ jobs:
       - name: Install dependencies (tools + project)
         run: |
           python -m pip install --upgrade pip
+          # Install the project with dev extras (includes pytest, ruff, etc. if you keep them there)
+          pip install -e ./ml_service[dev] || pip install -e ./ml_service
+          # Ensure black + ruff are present even if not in extras
           pip install black ruff
-          if [ -f ml-service/requirements.txt ]; then
-            pip install -r ml-service/requirements.txt
-          fi
 
       - name: Run black (check only)
-        run: black --check ml-service
+        run: |
+          black --check ml_service/src ml_service/tests || black --check ml_service/src
 
       - name: Run ruff
-        run: ruff check ml-service
+        run: |
+          ruff check ml_service/src ml_service/tests || ruff check ml_service/src
 
   test:
     name: Tests (pytest)
@@ -58,11 +59,15 @@ jobs:
       - name: Install dependencies (pytest + project)
         run: |
           python -m pip install --upgrade pip
+          # Install the project with dev extras if available
+          pip install -e ./ml_service[dev] || pip install -e ./ml_service
+          # Ensure pytest is available even if not in extras
           pip install pytest
-          if [ -f ml-service/requirements.txt ]; then
-            pip install -r ml-service/requirements.txt
-          fi
 
       - name: Run tests
         run: |
-          pytest ml-service/tests
+          if [ -d ml_service/tests ]; then
+            pytest ml_service/tests
+          else
+            pytest
+          fi
