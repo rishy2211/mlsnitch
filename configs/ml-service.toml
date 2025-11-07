@@ -1,0 +1,18 @@
+# configs/ml-service.toml
+#
+# Configuration for the FastAPI ML authenticity verification service.
+# The current Python code (`src/config.py`) reads `ML_SERVICE_MODEL_ROOT`
+# from the environment for the model directory and otherwise uses
+# hard-coded host/port (0.0.0.0:8080 via uvicorn).
+#
+# You can hook this file into a future Pydantic settings class if desired.
+
+[server]
+# Host and port for the FastAPI app.
+host = "0.0.0.0"
+port = 8080
+
+[models]
+# Root directory where model artefacts are stored inside the container.
+# Each model is expected at: <model_root>/<aid_hex>.pt
+root = "/app/ml_service/models"
