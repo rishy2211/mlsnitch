@@ -13,9 +13,6 @@ use std::{
     time::{Duration, SystemTime, UNIX_EPOCH},
 };
 
-use hex;
-use tokio;
-
 use chain::{
     // Domain types
     AccountId,
