@@ -1,6 +1,6 @@
 # deploy/docker/Dockerfile.ml-service
 #
-# Build + run the FastAPI-based ML verification service.
+# Build & run the FastAPI-based ML verification service.
 # Assumes:
 #   - workspace root has a `ml_service/` directory
 #   - `ml_service/pyproject.toml`
@@ -10,25 +10,32 @@ FROM python:3.11-slim
 
 WORKDIR /app/ml_service
 
-# Install system deps you might need later (kept minimal for now).
+# Runtime env tweaks: no .pyc files, unbuffered stdout/stderr for logs.
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
+# Install minimal system deps (gcc for any native wheels; libgomp for numpy/torch).
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends gcc && \
+    apt-get install -y --no-install-recommends gcc libgomp1 && \
     rm -rf /var/lib/apt/lists/*
 
 # Copy Python project metadata and source.
+# pyproject.toml defines the package and dependencies; src/ holds all code.
 COPY ml_service/pyproject.toml .
 COPY ml_service/src ./src
 
-# Install the package in the container.
+# Install the package (reads pyproject.toml).
 RUN pip install --no-cache-dir .
 
-# Default model root (matches src/config.py default + config/ml-service.toml).
+# Default model root (matches src/config.py).
+# Each model is expected at: ${ML_SERVICE_MODEL_ROOT}/<aid_hex>.pt
 ENV ML_SERVICE_MODEL_ROOT=/app/ml_service/models
 
 # Ensure the models directory exists.
-RUN mkdir -p /app/ml_service/models
+RUN mkdir -p "$ML_SERVICE_MODEL_ROOT"
 
 EXPOSE 8080
 
 # Run the FastAPI app with uvicorn.
+# The app is defined as `app` in src/main.py.
 CMD ["uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8080"]
