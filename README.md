@@ -1,4 +1,4 @@
-```markdown
+````markdown
 # ML-Aware Consensus Prototype
 
 This repo is a small, end-to-end prototype of a **blockchain that “bakes in” ML authenticity checks** at the consensus layer.
@@ -110,4 +110,99 @@ Key modules:
 > In plain Rust-only dev (no Docker), the default `ChainConfig` assumes the ML service is at `http://127.0.0.1:8080`.
 
 ---
+
+## Quickstart (No Docker)
+
+### 0. Prerequisites
+
+- Rust (stable)
+- Python 3.10+ with `venv` (or conda)
+- Locally running `ml_service` (see below)
+
+### 1. Start the ML Service
+
+```bash
+cd ml_service
+
+# Create & activate env (conda or venv)
+conda env create -f environment.yml   # or python -m venv .venv && source .venv/bin/activate
+conda activate ml-service
+
+# Install the package
+pip install -e .
+
+# Make a dummy model file
+mkdir -p models
+touch models/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pt
+
+# Run FastAPI app
+uvicorn src.main:app --host 0.0.0.0 --port 8080
+```
+````
+
+### 2. Run the Rust chain node
+
+```bash
+# From repo root
+cargo run -p chain
+```
+
+This:
+
+- opens a RocksDB store under `data/chain-db`,
+- exposes metrics on `http://127.0.0.1:9898/metrics`,
+- proposes (currently empty) blocks every few seconds.
+
+### 3. Run the API gateway
+
+In another terminal:
+
+```bash
+# From repo root
+cargo run -p api-gateway
+```
+
+You’ll see logs like:
+
+```text
+metrics exporter listening on http://0.0.0.0:9898/metrics
+API gateway listening on http://127.0.0.1:8081
+block producer running with interval 5s
+```
+
+### 4. Test the endpoints
+
+Health:
+
+```bash
+curl http://127.0.0.1:8081/health
+# {"status":"ok"}
+```
+
+Register a model:
+
+```bash
+curl -X POST http://127.0.0.1:8081/models/register \
+  -H "Content-Type: application/json" \
+  -d '{
+    "owner_account_hex": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "aid_hex": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+    "scheme_id": "multi_factor_v1",
+    "evidence_hash_hex": "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc",
+    "wm_profile": {
+      "tau_input": 0.9,
+      "tau_feat": 0.2,
+      "logit_band_low": -0.05,
+      "logit_band_high": 0.05
+    }
+  }'
+```
+
+You should get:
+
+```json
+{
+  "status": "queued",
+  "aid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+}
 ```
