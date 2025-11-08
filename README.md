@@ -257,3 +257,71 @@ Config stubs live under `configs/`. They document intended runtime knobs even if
 | `configs/prometheus.yml`  | Prometheus scrape config for `chain` + `api-gateway`          |
 
 Future work: wire these TOML files into the Rust & Python config loaders instead of relying solely on code defaults / env vars.
+
+---
+
+## Development & Testing
+
+### Rust
+
+From repo root:
+
+```bash
+# Run all tests in the workspace
+cargo test
+
+# Just chain crate
+cargo test -p chain
+
+# Just api-gateway crate
+cargo test -p api-gateway
+```
+
+### Python (`ml_service`)
+
+```bash
+cd ml_service
+pytest tests
+```
+
+GitHub Actions is set up with:
+
+| Workflow          | Location                                                    | What it does                              |
+| ----------------- | ----------------------------------------------------------- | ----------------------------------------- |
+| Rust CI           | `.github/workflows/rust-ci.yml` (not shown here, but wired) | `cargo fmt`, `clippy`, `test`             |
+| Python Code Check | `.github/workflows/python-ci.yml`                           | `black`, `ruff`, `pytest` on `ml_service` |
+
+---
+
+## Project Status & Roadmap
+
+This is a **research prototype**, not a production-ready blockchain. Current status:
+
+- Modular chain core with ML-aware validation hooks.
+- HTTP API for registration of ML models.
+- FastAPI ML service with stubbed watermarking logic.
+- Prometheus metrics for consensus and ML verification.
+- Docker Compose stack for end-to-end devnet.
+
+Planned / possible improvements:
+
+- Real transaction signatures using CRYSTALS-Dilithium / ML-DSA.
+- Richer ML evidence (`V_wm`, `V_train`, `V_struct`) and caching.
+- More advanced fork choice / committee-based ML verification.
+- Full config loading from TOML + env, instead of defaults only.
+- Experiment scripts under `expts/` for throughput/latency evaluation.
+
+---
+
+## Contributing & Code of Conduct
+
+See:
+
+- `docs/CONTRIBUTING.md`
+- `docs/CODE_OF_CONDUCT.md`
+
+Issues and PRs are welcome — especially around:
+
+- better ML watermarking strategies,
+- improved performance measurements,
+- and stronger formalisation of `V_auth` and `V_cons`.
