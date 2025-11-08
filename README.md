@@ -206,3 +206,54 @@ You should get:
   "aid": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
 }
 ```
+
+---
+
+## Running the Full Stack with Docker Compose
+
+Docker files:
+
+| File                                   | Image/Binary              |
+| -------------------------------------- | ------------------------- |
+| `deploy/docker/Dockerfile.ml-service`  | Python ML service         |
+| `deploy/docker/Dockerfile.chain`       | Rust `chain` binary       |
+| `deploy/docker/Dockerfile.api-gateway` | Rust `api-gateway` binary |
+
+Compose file: `deploy/docker-compose.yml`.
+
+From `deploy/`:
+
+```bash
+cd deploy
+docker compose up --build
+```
+
+Services:
+
+| Service                 | Host URL                        |
+| ----------------------- | ------------------------------- |
+| `ml-service`            | `http://localhost:8080`         |
+| `chain` (metrics)       | `http://localhost:9898/metrics` |
+| `api-gateway`           | `http://localhost:8081`         |
+| `api-gateway` (metrics) | `http://localhost:9899/metrics` |
+| `prometheus`            | `http://localhost:9090`         |
+
+Prometheus config (`configs/prometheus.yml`) scrapes:
+
+- `chain:9898`
+- `api-gateway:9898` (inside the Docker network)
+
+---
+
+## Configuration Files
+
+Config stubs live under `configs/`. They document intended runtime knobs even if the Rust/Python code currently uses defaults + env vars.
+
+| File                      | Purpose                                                       |
+| ------------------------- | ------------------------------------------------------------- |
+| `configs/api.toml`        | API gateway HTTP listen address (`[api].listen_addr`)         |
+| `configs/devnet.toml`     | Devnet `ChainConfig`: consensus, storage, ML client, metrics  |
+| `configs/ml-service.toml` | ML service server + model root (for future Pydantic settings) |
+| `configs/prometheus.yml`  | Prometheus scrape config for `chain` + `api-gateway`          |
+
+Future work: wire these TOML files into the Rust & Python config loaders instead of relying solely on code defaults / env vars.
