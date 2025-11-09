@@ -1,4 +1,3 @@
-````markdown
 # ML-Aware Consensus Prototype
 
 This repo is a small, end-to-end prototype of a **blockchain that “bakes in” ML authenticity checks** at the consensus layer.
@@ -138,7 +137,6 @@ touch models/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa.pt
 # Run FastAPI app
 uvicorn src.main:app --host 0.0.0.0 --port 8080
 ```
-````
 
 ### 2. Run the Rust chain node
 
