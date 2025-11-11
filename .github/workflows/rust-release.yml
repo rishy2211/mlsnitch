@@ -1,0 +1,47 @@
+name: Rust Release Build
+
+on:
+  push:
+    tags:
+      - "v*"
+
+concurrency:
+  group: rust-release-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-release:
+    name: Build chain + api-gateway (release)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo build
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: ./
+
+      - name: Build chain (release)
+        run: cargo build -p chain --release
+
+      - name: Build api-gateway (release)
+        run: cargo build -p api-gateway --release
+
+      - name: Upload chain binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: chain-${{ github.ref_name }}-linux-amd64
+          path: target/release/chain
+          if-no-files-found: error
+
+      - name: Upload api-gateway binary
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-gateway-${{ github.ref_name }}-linux-amd64
+          path: target/release/api-gateway
+          if-no-files-found: error
