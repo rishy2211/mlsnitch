@@ -1,0 +1,49 @@
+name: Devnet Integration
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+concurrency:
+  group: devnet-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  devnet-integration:
+    name: Spin up devnet and run smoke tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Start devnet stack (docker compose)
+        working-directory: deploy
+        run: |
+          docker compose up -d --build
+          # Wait a bit for services to start
+          sleep 30
+
+      - name: Smoke test endpoints
+        run: |
+          echo "Checking ml-service /health..."
+          curl -fsS http://localhost:8080/health || (echo "ml-service /health failed" && exit 1)
+
+          echo "Checking api-gateway /health..."
+          curl -fsS http://localhost:8081/health || (echo "api-gateway /health failed" && exit 1)
+
+          echo "Checking chain metrics..."
+          curl -fsS http://localhost:9898/metrics | head -n 5 || (echo "chain /metrics failed" && exit 1)
+
+          echo "Checking api-gateway metrics..."
+          curl -fsS http://localhost:9899/metrics | head -n 5 || (echo "api-gateway /metrics failed" && exit 1)
+
+      - name: Tear down devnet stack
+        if: always()
+        working-directory: deploy
+        run: docker compose down -v
