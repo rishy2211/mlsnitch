@@ -1,6 +1,9 @@
+# deploy/docker/Dockerfile.chain
+#
 # Multi-stage build for the `chain` binary.
 
-FROM rust:1.81 as builder
+# Updated to Rust 1.86.0 (cargo/rustc 1.86.0)
+FROM rust:1.86.0 as builder
 
 WORKDIR /usr/src/app
 

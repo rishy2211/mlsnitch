@@ -1,7 +1,10 @@
+# deploy/docker/Dockerfile.api-gateway
+#
 # Multi-stage build for the `api-gateway` binary, which links against
 # the `chain` library crate.
 
-FROM rust:1.81 as builder
+# Updated to Rust 1.86.0 (cargo/rustc 1.86.0)
+FROM rust:1.86.0 as builder
 
 WORKDIR /usr/src/app
 
@@ -30,7 +33,6 @@ COPY --from=builder /usr/src/app/target/release/api-gateway /usr/local/bin/api-g
 
 ENV RUST_LOG=api_gateway=info,chain=info
 
-# 8081 = API, 9898 = metrics (same pattern as chain crate).
 EXPOSE 8081 9898
 
 CMD ["api-gateway"]
