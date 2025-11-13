@@ -15,7 +15,9 @@ pub struct ApiConfig {
 impl Default for ApiConfig {
     fn default() -> Self {
         // Safe to unwrap: fixed, valid address literal.
-        let addr: SocketAddr = "127.0.0.1:8081"
+        // Bind to all interfaces so the container port mapping (8081→8081) is reachable
+        // from the host when running under docker-compose.
+        let addr: SocketAddr = "0.0.0.0:8081"
             .parse()
             .expect("hard-coded API listen address should parse");
         Self { listen_addr: addr }

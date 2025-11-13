@@ -78,6 +78,38 @@ impl HttpMlVerifier {
             path.trim_start_matches('/')
         )
     }
+
+    /// Checks whether the ML service is alive.
+    ///
+    /// Sends a GET request to `/health` expecting a JSON:
+    /// `{ "status": "ok" }`
+    pub fn health(&self) -> Result<bool, MlError> {
+        let url = self.endpoint("/health");
+
+        let resp = self
+            .client
+            .get(&url)
+            .send()
+            .map_err(|e| MlError::Transport(format!("HTTP GET {url} failed: {e}")))?;
+
+        let status = resp.status();
+        if !status.is_success() {
+            return Err(MlError::Service(format!(
+                "ML service returned HTTP status {status}"
+            )));
+        }
+
+        #[derive(Deserialize)]
+        struct HealthResp {
+            status: String,
+        }
+
+        let body: HealthResp = resp
+            .json()
+            .map_err(|e| MlError::Protocol(format!("failed to parse health response: {e}")))?;
+
+        Ok(body.status.to_lowercase() == "ok")
+    }
 }
 
 /// Internal request payload sent to the ML service.
@@ -158,6 +190,18 @@ impl MlVerifier for HttpMlVerifier {
 mod tests {
     use super::*;
     use crate::types::{EvidenceHash, HASH_LEN};
+
+    #[test]
+    fn health_response_can_be_deserialized() {
+        let json = r#"{ "status": "ok" }"#;
+        #[derive(Deserialize)]
+        struct HealthResp {
+            status: String,
+        }
+
+        let resp: HealthResp = serde_json::from_str(json).expect("HealthResp should parse");
+        assert_eq!(resp.status, "ok");
+    }
 
     #[test]
     fn verify_request_hex_encoding_helpers() {

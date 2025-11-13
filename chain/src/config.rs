@@ -50,7 +50,9 @@ pub struct MetricsConfig {
 impl Default for MetricsConfig {
     fn default() -> Self {
         // Safe to unwrap: this is a fixed, valid address literal.
-        let addr: SocketAddr = "127.0.0.1:9898"
+        // Bind to all interfaces so docker-compose port mapping (9898→9898) is reachable
+        // from the host and other containers on the bridge network.
+        let addr: SocketAddr = "0.0.0.0:9898"
             .parse()
             .expect("hard-coded metrics listen address should parse");
         Self {
