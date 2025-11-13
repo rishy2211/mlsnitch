@@ -3,9 +3,27 @@
 # Multi-stage build for the `chain` binary.
 
 # Updated to Rust 1.86.0 (cargo/rustc 1.86.0)
-FROM rust:1.86.0 as builder
+FROM rust:1.86.0 AS builder
 
 WORKDIR /usr/src/app
+
+# Install build dependencies for librocksdb-sys (RocksDB) and bindgen.
+# - clang / libclang-dev: needed by bindgen (via clang-sys)
+# - llvm-dev: extra LLVM bits (often pulled in by libclang-dev anyway)
+# - build-essential / pkg-config: standard C/C++ toolchain
+# - compression libs: recommended for RocksDB builds
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    clang \
+    libclang-dev \
+    llvm-dev \
+    build-essential \
+    pkg-config \
+    libsnappy-dev \
+    zlib1g-dev \
+    liblz4-dev \
+    libzstd-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace manifests first for better caching.
 COPY Cargo.toml Cargo.lock ./

@@ -4,9 +4,24 @@
 # the `chain` library crate.
 
 # Updated to Rust 1.86.0 (cargo/rustc 1.86.0)
-FROM rust:1.86.0 as builder
+FROM rust:1.86.0 AS builder
 
 WORKDIR /usr/src/app
+
+# Same build dependencies as the chain Dockerfile, because building
+# api-gateway will also compile the `chain` crate (and thus RocksDB/bindgen).
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    clang \
+    libclang-dev \
+    llvm-dev \
+    build-essential \
+    pkg-config \
+    libsnappy-dev \
+    zlib1g-dev \
+    liblz4-dev \
+    libzstd-dev \
+    && rm -rf /var/lib/apt/lists/*
 
 # Copy workspace manifests first for better caching.
 COPY Cargo.toml Cargo.lock ./

@@ -6,8 +6,6 @@ name: mlsnitch
 # - api-gateway: Rust API + embedded consensus engine (API on 8081, metrics on 9898)
 # - prometheus: Scrapes metrics from chain + api-gateway
 
-version: "3.9"
-
 services:
   ml-service:
     build:
