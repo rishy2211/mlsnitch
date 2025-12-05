@@ -60,12 +60,12 @@ impl BaseValidity {
         let mut seen: HashSet<Aid> = HashSet::new();
 
         for tx in &block.txs {
-            if let Transaction::RegisterModel(tx_reg) = tx {
-                if !seen.insert(tx_reg.aid) {
-                    return Err(ValidationError::Custom(
-                        "duplicate Aid in TxRegisterModel within the same block".to_string(),
-                    ));
-                }
+            if let Transaction::RegisterModel(tx_reg) = tx
+                && !seen.insert(tx_reg.aid)
+            {
+                return Err(ValidationError::Custom(
+                    "duplicate Aid in TxRegisterModel within the same block".to_string(),
+                ));
             }
         }
 
