@@ -1,5 +1,2 @@
 # Use a cheaper default image (smaller/faster than full ubuntu-latest)
 -P ubuntu-latest=catthehacker/ubuntu:act-latest
-
-# Show logs as they stream
---verbose

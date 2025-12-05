@@ -5,48 +5,31 @@ on:
     branches: [main, master]
     paths:
       - "chain/**"
-      - "api-gateway/**"
-      - "ml-service/**"
       - "deploy/docker/**"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "chain/**"
-      - "api-gateway/**"
-      - "ml-service/**"
       - "deploy/docker/**"
+
+permissions:
+  contents: read
+  packages: write
 
 concurrency:
   group: docker-ci-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  build-images:
-    name: Build Docker images
+  build-chain-image:
+    name: Build chain Docker image
     runs-on: ubuntu-latest
-
-    # Parallel builds for speed; keep it reasonable for disk usage
-    strategy:
-      fail-fast: false
-      matrix:
-        target: [chain, api-gateway, ml-service]
-        include:
-          - target: chain
-            dockerfile: deploy/docker/Dockerfile.chain
-            tag: chain-ci:latest
-          - target: api-gateway
-            dockerfile: deploy/docker/Dockerfile.api-gateway
-            tag: api-gateway-ci:latest
-          - target: ml-service
-            dockerfile: deploy/docker/Dockerfile.ml-service
-            tag: ml-service-ci:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # Optional but helps avoid random disk issues + can speed builds slightly
       - name: Free disk space
         run: |
           df -h
@@ -56,17 +39,24 @@ jobs:
           docker system prune -af || true
           df -h
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+      # Skip login when running locally under `act`
+      - name: Log in to GitHub Container Registry
+        if: env.ACT != 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build ${{ matrix.target }} image (cached)
+      - name: Build and (maybe) push chain image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: ${{ matrix.dockerfile }}
-          push: false
-          tags: ${{ matrix.tag }}
-          load: false
-          # Per-target cache scopes so they don't stomp on each other
-          cache-from: type=gha,scope=docker-ci-${{ matrix.target }}
-          cache-to: type=gha,mode=max,scope=docker-ci-${{ matrix.target }}
+          file: deploy/docker/Dockerfile.chain
+
+          # Only push on real GitHub runners
+          push: ${{ github.event_name == 'push' && env.ACT != 'true' }}
+
+          tags: |
+            ghcr.io/${{ github.repository }}-chain:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}-chain:latest
