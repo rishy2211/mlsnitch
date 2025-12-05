@@ -3,8 +3,19 @@ name: Docker CI
 on:
   push:
     branches: [main, master]
+    paths:
+      - "chain/**"
+      - "api-gateway/**"
+      - "ml-service/**"
+      - "deploy/docker/**"
+      - ".github/workflows/docker-ci.yml"
   pull_request:
     branches: [main, master]
+    paths:
+      - "chain/**"
+      - "api-gateway/**"
+      - "ml-service/**"
+      - "deploy/docker/**"
 
 concurrency:
   group: docker-ci-${{ github.ref }}
@@ -15,39 +26,47 @@ jobs:
     name: Build Docker images
     runs-on: ubuntu-latest
 
+    # Parallel builds for speed; keep it reasonable for disk usage
     strategy:
+      fail-fast: false
       matrix:
-        target:
-          - chain
-          - api-gateway
-          - ml-service
+        target: [chain, api-gateway, ml-service]
+        include:
+          - target: chain
+            dockerfile: deploy/docker/Dockerfile.chain
+            tag: chain-ci:latest
+          - target: api-gateway
+            dockerfile: deploy/docker/Dockerfile.api-gateway
+            tag: api-gateway-ci:latest
+          - target: ml-service
+            dockerfile: deploy/docker/Dockerfile.ml-service
+            tag: ml-service-ci:latest
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Optional but helps avoid random disk issues + can speed builds slightly
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af || true
+          df -h
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Build ${{ matrix.target }} image
-        run: |
-          case "${{ matrix.target }}" in
-            chain)
-              docker build \
-                -f deploy/docker/Dockerfile.chain \
-                -t chain-ci:latest \
-                .
-              ;;
-            api-gateway)
-              docker build \
-                -f deploy/docker/Dockerfile.api-gateway \
-                -t api-gateway-ci:latest \
-                .
-              ;;
-            ml-service)
-              docker build \
-                -f deploy/docker/Dockerfile.ml-service \
-                -t ml-service-ci:latest \
-                .
-              ;;
-          esac
+      - name: Build ${{ matrix.target }} image (cached)
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          push: false
+          tags: ${{ matrix.tag }}
+          load: false
+          # Per-target cache scopes so they don't stomp on each other
+          cache-from: type=gha,scope=docker-ci-${{ matrix.target }}
+          cache-to: type=gha,mode=max,scope=docker-ci-${{ matrix.target }}
