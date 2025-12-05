@@ -3,6 +3,3 @@
 
 # Show logs as they stream
 --verbose
-
-# Always run in dry-run mode by default (no external side effects)
---dryrun

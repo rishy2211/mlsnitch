@@ -3,8 +3,19 @@ name: Devnet Integration
 on:
   push:
     branches: [main, master]
+    paths:
+      - "chain/**"
+      - "api-gateway/**"
+      - "ml-service/**"
+      - "deploy/**"
+      - ".github/workflows/devnet-integration.yml"
   pull_request:
     branches: [main, master]
+    paths:
+      - "chain/**"
+      - "api-gateway/**"
+      - "ml-service/**"
+      - "deploy/**"
 
 concurrency:
   group: devnet-integration-${{ github.ref }}
@@ -19,28 +30,67 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # One-time disk cleanup – avoids "no space left on device"
+      - name: Free disk space
+        run: |
+          df -h
+          sudo rm -rf /usr/local/lib/android || true
+          sudo rm -rf /opt/ghc || true
+          sudo rm -rf /opt/hostedtoolcache/CodeQL || true
+          docker system prune -af || true
+          df -h
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Start devnet stack (docker compose)
+      # Fast, cached image builds using bake + GHA cache
+      # Assumes services are defined as ml-service, api-gateway, chain
+      - name: Build devnet images with cache
+        uses: docker/bake-action@v6
+        with:
+          files: deploy/docker-compose.yml
+          targets: |
+            ml-service
+            api-gateway
+            chain
+          set: |
+            *.cache-from=type=gha,scope=devnet
+            *.cache-to=type=gha,scope=devnet,mode=max
+            *.output=type=docker
+
+      - name: Start devnet stack
         working-directory: deploy
+        run: docker compose up -d
+
+      - name: Smoke test endpoints (with simple retries)
         run: |
-          docker compose up -d --build
-          # Wait a bit for services to start
-          sleep 30
+          retry() {
+            local name="$1"; shift
+            local cmd="$*"
+            local attempts=15
+            local delay=4
+            for i in $(seq 1 "$attempts"); do
+              echo "[$name] attempt $i/$attempts..."
+              if eval "$cmd"; then
+                echo "[$name] OK"
+                return 0
+              fi
+              sleep "$delay"
+            done
+            echo "[$name] FAILED after $attempts attempts"
+            return 1
+          }
 
-      - name: Smoke test endpoints
-        run: |
-          echo "Checking ml-service /health..."
-          curl -fsS http://localhost:8080/health || (echo "ml-service /health failed" && exit 1)
+          retry "ml-service /health" \
+            "curl -fsS http://localhost:8080/health > /dev/null"
 
-          echo "Checking api-gateway /health..."
-          curl -fsS http://localhost:8081/health || (echo "api-gateway /health failed" && exit 1)
+          retry "api-gateway /health" \
+            "curl -fsS http://localhost:8081/health > /dev/null"
 
-          echo "Checking chain metrics..."
+          echo "Checking chain metrics (single shot)..."
           curl -fsS http://localhost:9898/metrics | head -n 5 || (echo "chain /metrics failed" && exit 1)
 
-          echo "Checking api-gateway metrics..."
+          echo "Checking api-gateway metrics (single shot)..."
           curl -fsS http://localhost:9899/metrics | head -n 5 || (echo "api-gateway /metrics failed" && exit 1)
 
       - name: Tear down devnet stack
