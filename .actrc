@@ -1,2 +1,5 @@
 # Use a cheaper default image (smaller/faster than full ubuntu-latest)
 -P ubuntu-latest=catthehacker/ubuntu:act-latest
+
+# Use a particular architecture so ARM doesnt give issues
+--container-architecture linux/amd64

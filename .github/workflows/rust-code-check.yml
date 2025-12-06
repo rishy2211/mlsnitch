@@ -8,7 +8,6 @@ on:
       - "**/Cargo.lock"
       - "chain/**"
       - "api-gateway/**"
-      - "ml-service/**"
       - ".github/workflows/rust-code-check.yml"
   pull_request:
     branches: [main, master]
