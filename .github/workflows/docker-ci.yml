@@ -5,12 +5,14 @@ on:
     branches: [main, master]
     paths:
       - "chain/**"
+      - "api-gateway/**"
       - "deploy/docker/**"
       - ".github/workflows/docker-ci.yml"
   pull_request:
     branches: [main, master]
     paths:
       - "chain/**"
+      - "api-gateway/**"
       - "deploy/docker/**"
 
 permissions:
@@ -22,9 +24,13 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build-chain-image:
-    name: Build chain Docker image
+  build-images:
+    name: Build Docker images
     runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        service: [chain, api-gateway, ml-service]
 
     steps:
       - name: Checkout
@@ -48,15 +54,15 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and (maybe) push chain image
+      - name: Build and (maybe) push ${{ matrix.service }} image
         uses: docker/build-push-action@v6
         with:
           context: .
-          file: deploy/docker/Dockerfile.chain
+          file: deploy/docker/Dockerfile.${{ matrix.service }}
 
           # Only push on real GitHub runners
           push: ${{ github.event_name == 'push' && env.ACT != 'true' }}
 
           tags: |
-            ghcr.io/${{ github.repository }}-chain:sha-${{ github.sha }}
-            ghcr.io/${{ github.repository }}-chain:latest
+            ghcr.io/${{ github.repository }}-${{ matrix.service }}:sha-${{ github.sha }}
+            ghcr.io/${{ github.repository }}-${{ matrix.service }}:latest
