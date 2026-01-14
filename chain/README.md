@@ -1,4 +1,3 @@
-````markdown
 # chain – ML-Aware Consensus Simulator
 
 > Experimental Rust chain that **“bakes in” ML authenticity checks** directly into block validation.
